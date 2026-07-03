@@ -16,9 +16,6 @@ import Lenis from 'lenis';
 
 gsap.registerPlugin(ScrollTrigger);
 
-// Normalize scroll for mobile viewports
-ScrollTrigger.normalizeScroll(true);
-
 /* ════════════════════════════════════════════
    LENIS — global smooth scroll instance
    Options tuned for a crisp, weighty feel.

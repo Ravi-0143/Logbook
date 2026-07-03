@@ -539,6 +539,21 @@ async function renderLog(jump) {
   if (jump) vDay = jump;
   if (!vDay) vDay = nowK;
 
+  // Immediate skeleton loader cards so the screen is never blank during network fetches
+  const grid = document.getElementById('bentoGrid');
+  if (grid) {
+    grid.className = 'bento-ssc';
+    grid.innerHTML = Array.from({ length: 6 }, () => `
+      <div class="bento-cell shown" style="pointer-events:none; border-color:#e8eaed; min-height:100px;">
+        <div class="cell-top">
+          <div class="skel-ttl"></div>
+          <div class="cell-cat-pill" style="opacity:0.25; background:none; border-color:#e8eaed;">loading</div>
+        </div>
+        <div class="skel-time"></div>
+      </div>
+    `).join('');
+  }
+
   await Promise.all(dates.map(dt => getDay(toK(dt))));
 
   const vDate   = dates.find(d => toK(d) === vDay) || now;
@@ -578,7 +593,6 @@ async function renderLog(jump) {
   addPassiveToggle(newStrip, () => { const d = cache[_vKey]||empty(); runModal(ciBlk, d, _vKey, _sched); });
 
   /* Build bento grid */
-  const grid = document.getElementById('bentoGrid');
   grid.innerHTML = '';
   grid.className = GRID_CLASS[type] || 'bento-ssc';
 
