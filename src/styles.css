@@ -92,6 +92,12 @@ body {
   pointer-events: none;
   display: block;
 }
+#webgl-cursor {
+  position: fixed; inset: 0;
+  z-index: 95;
+  pointer-events: none;
+  display: block;
+}
 
 /* Lenis smooth scroll — prevents body height conflict */
 html.lenis, html.lenis body { height: auto; }
@@ -624,9 +630,7 @@ html.lenis, html.lenis body { height: auto; }
 }
 .wk-head span { font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--dim); }
 
-@media (pointer: fine) {
-  * { cursor: none !important; }
-}
+
 
 /* Radial Data Constellation */
 .constellation-container {
