@@ -9,9 +9,8 @@ export default defineConfig({
     open: true,
   },
   build: {
-    // Output to repo root /docs — one level up from logbook-app/
-    // GitHub Pages is set to serve from main branch, /docs folder
-    outDir: '../docs',
+    // Built output served by GitHub Pages (main branch, /docs folder)
+    outDir: 'docs',
     emptyOutDir: true,
   },
 });
