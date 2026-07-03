@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#06090e">
+<meta name="description" content="Personal daily study logbook — private, honest, spatial.">
+<title>Logbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Google+Sans:wght@400;500&family=Google+Sans+Mono&display=swap" rel="stylesheet">
+  <script type="module" crossorigin src="/Logbook/assets/index-BIrM0fPK.js"></script>
+  <link rel="stylesheet" crossorigin href="/Logbook/assets/index-CAhPDdGc.css">
+</head>
+<body>
+
+<!-- ══ WEBGL BACKGROUND — Three.js shader (replaces nebula + stars canvas) ══ -->
+<canvas id="webgl-bg"></canvas>
+
+<!-- ══ POPUP ══ -->
+<div id="pop">
+  <div id="pop-card">
+    <div id="pop-icon"></div>
+    <div id="pop-title"></div>
+    <div id="pop-msg"></div>
+    <div id="pop-acts"></div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast"></div>
+
+<!-- ══ BLOCK MODAL ══ -->
+<div id="bmBd"></div>
+<div id="bm">
+  <div class="bm-handle"></div>
+  <div class="bm-hdr">
+    <div class="bm-ttl-wrap">
+      <h2 id="bmTtl"></h2>
+      <div id="bmTime"></div>
+    </div>
+    <button class="bm-x" id="bmX">✕</button>
+  </div>
+  <div id="bmBody"></div>
+</div>
+
+<!-- ══ TOP NAV ══ -->
+<div id="topNav">
+  <button class="tnb" id="btnCover">↩ Cover</button>
+  <button class="tnb on" id="btnToday">Today</button>
+  <button class="tnb" id="btnWeek">Week</button>
+</div>
+
+<!-- ══ COVER ══ -->
+<div id="view-cover">
+  <div class="c-orbit a"></div>
+  <div class="c-orbit b"></div>
+  <div class="c-orbit c"></div>
+  <div class="c-eye">Personal · Private · Honest</div>
+  <h1 class="c-word" id="cWord"></h1>
+  <p class="c-tag" id="cTag">Your daily study record</p>
+  <button class="c-btn" id="openBtn">Open today →</button>
+  <div class="c-date" id="cDate"></div>
+</div>
+
+<!-- ══ LOGBOOK ══ -->
+<div id="view-logbook">
+  <div class="lb-date" id="lbDate"></div>
+  <div class="day-nav" id="dayNav"></div>
+  <div id="dayTag"></div>
+
+  <!-- Library check-in strip (gate, not a task cell) -->
+  <div class="ci-strip" id="ciStrip">
+    <span class="ci-strip-icon">📍</span>
+    <span class="ci-strip-text" id="ciStripText">Library · Not checked in yet</span>
+  </div>
+
+  <!-- Bento grid — class set dynamically per day type -->
+  <div id="bentoGrid"></div>
+
+  <p class="honesty">This only works if it's honest. Nobody sees this but you.</p>
+  <div class="rst-lnk" id="rstDay">Clear today's checks</div>
+</div>
+
+<!-- ══ WEEK ══ -->
+<div id="view-week">
+  <div class="wk-head">
+    <h2>This Week</h2>
+    <span id="wkRange"></span>
+  </div>
+  <div id="wkGrid"></div>
+</div>
+
+</body>
+</html>
