@@ -243,7 +243,7 @@ function curBlk(blocks) {
    STORAGE — Google Sheets Backend
    Test Deployment Web App URL
 ════════════════════════════════════════════ */
-const API_URL = 'https://script.google.com/macros/s/AKfycbzq7zzVSg8xyWB8h3sddxZ6cuc5aXrDwoGoAfcIU81N/exec';
+const API_URL = 'https://script.google.com/macros/s/AKfycbxaeSo1IkiIa9Ti_-RGgDAi4K0Clbs20DkgKAi4R8-tkUHlPv1AWugp4TSq4Z3zgxYccw/exec';
 const cache = {}, pend = {};
 
 async function getDay(k) {
