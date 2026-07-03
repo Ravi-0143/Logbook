@@ -25,6 +25,96 @@ gsap.registerPlugin(ScrollTrigger);
    (replaces nebula.js + stars.js entirely)
 ════════════════════════════════════════════ */
 initWebGLBackground();
+initCustomCursor();
+
+/* ════════════════════════════════════════════
+   ANTIGRAWITY CUSTOM POINTER (FIBER-FLIES)
+   Coordinates a central dot, outer ring, and
+   6 orbiting fireflies elastically following mouse.
+════════════════════════════════════════════ */
+function initCustomCursor() {
+  const dot = document.querySelector('.cursor-dot');
+  const ring = document.querySelector('.cursor-ring');
+  const fireflies = document.querySelectorAll('.firefly');
+  const wrapper = document.getElementById('custom-cursor');
+  if (!dot || !ring || !wrapper) return;
+
+  const mouse = { x: -100, y: -100 };
+  const ringPos = { x: -100, y: -100 };
+  const flyPositions = Array.from({ length: fireflies.length }, () => ({ x: -100, y: -100, vx: 0, vy: 0 }));
+
+  let hasMoved = false;
+
+  window.addEventListener('mousemove', e => {
+    if (!hasMoved) {
+      hasMoved = true;
+      gsap.set(wrapper, { opacity: 1 });
+      ringPos.x = e.clientX;
+      ringPos.y = e.clientY;
+      flyPositions.forEach(fly => {
+        fly.x = e.clientX;
+        fly.y = e.clientY;
+      });
+    }
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+
+  function updateCursor() {
+    if (hasMoved) {
+      // 1. Direct follow for dot
+      gsap.set(dot, { x: mouse.x, y: mouse.y });
+
+      // 2. Lag follow for ring
+      ringPos.x += (mouse.x - ringPos.x) * 0.15;
+      ringPos.y += (mouse.y - ringPos.y) * 0.15;
+      gsap.set(ring, { x: ringPos.x, y: ringPos.y });
+
+      // 3. Firefly physics: spring follow + noise float
+      const time = Date.now() * 0.003;
+      flyPositions.forEach((fly, i) => {
+        const angle = (i / fireflies.length) * Math.PI * 2 + time * 0.5;
+        const orbitRadius = 14 + Math.sin(time + i) * 6;
+        const targetX = mouse.x + Math.cos(angle) * orbitRadius;
+        const targetY = mouse.y + Math.sin(angle) * orbitRadius;
+
+        const ax = (targetX - fly.x) * 0.08;
+        const ay = (targetY - fly.y) * 0.08;
+        
+        fly.vx = (fly.vx + ax) * 0.82;
+        fly.vy = (fly.vy + ay) * 0.82;
+
+        fly.x += fly.vx;
+        fly.y += fly.vy;
+
+        gsap.set(fireflies[i], { x: fly.x, y: fly.y });
+      });
+    }
+    requestAnimationFrame(updateCursor);
+  }
+  
+  document.addEventListener('mouseenter', () => gsap.to(wrapper, { opacity: 1, duration: 0.2 }));
+  document.addEventListener('mouseleave', () => gsap.to(wrapper, { opacity: 0, duration: 0.2 }));
+
+  // Hover states over clickable elements
+  const hoverElements = 'button, a, .bento-cell, .pb, .btn, .tnb, .c-btn, #ciStrip, .rst-lnk';
+  document.addEventListener('mouseover', e => {
+    if (e.target.closest(hoverElements)) {
+      gsap.to(ring, { scale: 1.5, borderColor: '#4285F4', duration: 0.25 });
+      gsap.to(dot, { scale: 0.6, backgroundColor: '#4285F4', duration: 0.25 });
+      fireflies.forEach(f => gsap.to(f, { scale: 1.4, duration: 0.25 }));
+    }
+  });
+  document.addEventListener('mouseout', e => {
+    if (e.target.closest(hoverElements)) {
+      gsap.to(ring, { scale: 1, borderColor: '#202124', duration: 0.25 });
+      gsap.to(dot, { scale: 1, backgroundColor: '#202124', duration: 0.25 });
+      fireflies.forEach(f => gsap.to(f, { scale: 1, duration: 0.25 }));
+    }
+  });
+
+  requestAnimationFrame(updateCursor);
+}
 
 /* ════════════════════════════════════════════
    PHASE 3 — Lenis smooth scroll
