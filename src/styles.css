@@ -72,10 +72,8 @@
 }
 html, body {
   width: 100%; height: 100%;
-  overflow: hidden; overflow-x: hidden; position: fixed;
   background: var(--bg);
-  scroll-behavior: auto;
-  touch-action: pan-y;
+  overflow-x: hidden;
 }
 body {
   color: var(--text);
@@ -91,12 +89,6 @@ body {
 #webgl-bg {
   position: fixed; inset: 0;
   z-index: var(--z-webgl);
-  pointer-events: none;
-  display: block;
-}
-#webgl-cursor {
-  position: fixed; inset: 0;
-  z-index: 95;
   pointer-events: none;
   display: block;
 }
@@ -632,7 +624,9 @@ html.lenis, html.lenis body { height: auto; }
 }
 .wk-head span { font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--dim); }
 
-
+@media (pointer: fine) {
+  * { cursor: none !important; }
+}
 
 /* Radial Data Constellation */
 .constellation-container {

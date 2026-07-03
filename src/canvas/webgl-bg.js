@@ -154,25 +154,16 @@ const PART_FRAG = /* glsl */`
 let bgUniforms = null;
 
 export function initWebGLBackground() {
-  const bgCanvas = document.getElementById('webgl-bg');
-  const cursorCanvas = document.getElementById('webgl-cursor');
-  if (!bgCanvas || !cursorCanvas) return;
+  const canvas = document.getElementById('webgl-bg');
+  if (!canvas) return;
 
-  // Renderer 1: Background Quad (Behind all content)
-  const bgRenderer = new THREE.WebGLRenderer({ canvas: bgCanvas, antialias: true, alpha: false });
-  bgRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  bgRenderer.setSize(window.innerWidth, window.innerHeight);
+  const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setSize(window.innerWidth, window.innerHeight);
 
-  // Renderer 2: Cursor Particles overlay (Above content, transparent background)
-  const cursorRenderer = new THREE.WebGLRenderer({ canvas: cursorCanvas, antialias: true, alpha: true });
-  cursorRenderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-  cursorRenderer.setSize(window.innerWidth, window.innerHeight);
-  cursorRenderer.setClearColor(0x000000, 0);
-
-  const bgScene = new THREE.Scene();
-  const cursorScene = new THREE.Scene();
+  const scene = new THREE.Scene();
   
-  // Camera for both layers (2D orthographic)
+  // Camera for background quad (2D orthographic)
   const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 
   // 1. Background plane
@@ -191,9 +182,9 @@ export function initWebGLBackground() {
     depthTest: false
   });
   const bgMesh = new THREE.Mesh(bgGeo, bgMat);
-  bgScene.add(bgMesh);
+  scene.add(bgMesh);
 
-  // 2. FBO instanced particle setup (On cursorScene overlay)
+  // 2. FBO instanced particle setup
   const maxParticles = 140;
   const particles = Array.from({ length: maxParticles }, () => ({
     x: 0, y: 0,
@@ -227,7 +218,7 @@ export function initWebGLBackground() {
 
   const particleMesh = new THREE.InstancedMesh(instancedGeo, particleMat, maxParticles);
   particleMesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
-  cursorScene.add(particleMesh);
+  scene.add(particleMesh);
 
   // Mouse physics properties
   const mouse = { x: 0, y: 0 };
@@ -298,8 +289,7 @@ export function initWebGLBackground() {
 
   // Window resize handler
   function onResize() {
-    bgRenderer.setSize(window.innerWidth, window.innerHeight);
-    cursorRenderer.setSize(window.innerWidth, window.innerHeight);
+    renderer.setSize(window.innerWidth, window.innerHeight);
     if (bgUniforms) {
       bgUniforms.uResolution.value.set(window.innerWidth, window.innerHeight);
     }
@@ -357,9 +347,7 @@ export function initWebGLBackground() {
     typeAttribute.needsUpdate = true;
     particleMesh.instanceMatrix.needsUpdate = true;
 
-    // Render layers
-    bgRenderer.render(bgScene, camera);
-    cursorRenderer.render(cursorScene, camera);
+    renderer.render(scene, camera);
   }
   animate();
 }

@@ -16,7 +16,6 @@ import {
   bindParallax,
   bindCellHover,
   pulseStrip,
-  shakeOtherCells,
 } from './animations.js';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -740,7 +739,6 @@ async function renderLog(jump) {
     }
 
     card.addEventListener('click', () => {
-      shakeOtherCells(card);
       const d = cache[_vKey]||empty(); runModal(blk, d, _vKey, _sched);
     });
 

@@ -173,87 +173,43 @@ export function revealMaskedEl(el, { delay = 0 } = {}) {
 export function bindParallax(scrollEl, targets, factor = 0.4) {
   if (!targets || !targets.length) return;
 
-  const onScroll = () => {
-    const st = scrollEl.scrollTop;
-    targets.forEach(el => {
-      gsap.set(el, { y: st * factor * -1 });
-    });
-  };
+  const mm = gsap.matchMedia();
 
-  scrollEl.addEventListener('scroll', onScroll, { passive: true });
+  mm.add("(min-width: 768px)", () => {
+    const onScroll = () => {
+      const st = scrollEl.scrollTop;
+      targets.forEach(el => {
+        gsap.set(el, { y: st * factor * -1 });
+      });
+    };
+
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+
+    // Clean up function runs when media query matches are lost (e.g. mobile resizing)
+    return () => {
+      scrollEl.removeEventListener('scroll', onScroll);
+      targets.forEach(el => {
+        gsap.set(el, { clearProps: "y" });
+      });
+    };
+  });
 }
 
 /* ════════════════════════════════════════════
-   BENTO CELL HOVER LIFT (3D Perspective tilt)
-   Calculates pointer offsets to tilt cell along X/Y
-   and lift on the Z-axis (foreground translation).
+   BENTO CELL HOVER LIFT
+   Micro-interaction: slight Y lift + shadow
+   intensify on pointer enter; spring back on leave.
+   Applied globally to all .bento-cell elements.
 ════════════════════════════════════════════ */
 export function bindCellHover(cell) {
   const isObligation = cell.classList.contains('cat-obligation');
-  if (isObligation) return;
+  if (isObligation) return; // strip doesn't need lift
 
-  // Enable 3D rendering context on this cell
-  gsap.set(cell, { transformPerspective: 1000, transformStyle: "preserve-3d" });
-
-  const onMouseMove = (e) => {
-    const rect = cell.getBoundingClientRect();
-    const x = e.clientX - rect.left - rect.width / 2;
-    const y = e.clientY - rect.top - rect.height / 2;
-    const nx = x / (rect.width / 2);
-    const ny = y / (rect.height / 2);
-
-    gsap.to(cell, {
-      rotateY: nx * 8,   // Rotates horizontally
-      rotateX: -ny * 8,  // Rotates vertically
-      z: 26,             // Pulls card forward (3D depth)
-      boxShadow: "0 28px 60px rgba(0, 0, 0, 0.08), 0 12px 24px rgba(0, 0, 0, 0.04)",
-      duration: 0.25,
-      ease: "power2.out",
-      overwrite: "auto"
-    });
-  };
-
-  const onMouseLeave = () => {
-    gsap.to(cell, {
-      rotateY: 0,
-      rotateX: 0,
-      z: 0,
-      boxShadow: "0 12px 32px rgba(0, 0, 0, 0.04), 0 2px 6px rgba(0, 0, 0, 0.02)",
-      duration: 0.45,
-      ease: "power2.out",
-      overwrite: "auto"
-    });
-  };
-
-  cell.addEventListener('mousemove', onMouseMove);
-  cell.addEventListener('mouseleave', onMouseLeave);
-}
-
-/* ════════════════════════════════════════════
-   PHYSICAL GRID RECOIL (Shockwave Shake)
-   Shakes all other bento cells when one is clicked.
-════════════════════════════════════════════ */
-export function shakeOtherCells(clickedCell) {
-  const cells = document.querySelectorAll('.bento-cell');
-  cells.forEach(cell => {
-    if (cell !== clickedCell && !cell.classList.contains('cat-obligation')) {
-      // Rapid physical shake on X, Y and Z-rotations
-      gsap.fromTo(cell, 
-        { x: 0, y: 0, rotateZ: 0 }, 
-        {
-          x: () => gsap.utils.random(-7, 7),
-          y: () => gsap.utils.random(-5, 5),
-          rotateZ: () => gsap.utils.random(-1.2, 1.2),
-          duration: 0.05,
-          repeat: 7,
-          yoyo: true,
-          ease: "sine.inOut",
-          onComplete: () => {
-            gsap.to(cell, { x: 0, y: 0, rotateZ: 0, duration: 0.25, ease: "power2.out" });
-          }
-        }
-      );
-    }
+  cell.addEventListener('mouseenter', () => {
+    gsap.to(cell, { y: -4, duration: 0.3, ease: 'power2.out' });
+  });
+  cell.addEventListener('mouseleave', () => {
+    gsap.to(cell, { y: 0,  duration: 0.5, ease: 'elastic.out(1, 0.5)' });
   });
 }
 
