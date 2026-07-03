@@ -27,42 +27,16 @@ gsap.registerPlugin(ScrollTrigger);
 initWebGLBackground();
 
 /* ════════════════════════════════════════════
-   PHASE 3 — Lenis smooth scroll & Parallax
+   PHASE 3 — Lenis smooth scroll
    Bound after DOM is ready; re-bound whenever
    the active scroll container changes.
 ════════════════════════════════════════════ */
 let _lenis = null;
-let floatTriggers = [];
 
 function bindLenisTo(container) {
-  // Clear existing floating parallax triggers
-  floatTriggers.forEach(t => t.kill());
-  floatTriggers = [];
-
   if (_lenis) { _lenis.destroy(); _lenis = null; }
   if (!container) return;
-  
   _lenis = initLenis(container);
-
-  // Initialize ScrollTrigger parallax on floating symbols layer
-  const syms = gsap.utils.toArray('.float-sym');
-  
-  // Only apply scroll-parallax if screen is desktop width and fine pointer
-  if (window.matchMedia('(min-width: 768px) and (pointer: fine)').matches) {
-    syms.forEach((sym, i) => {
-      const speed = 320 + (i * 90); // staggered aggressive float translation
-      const trigger = ScrollTrigger.create({
-        trigger: container,
-        scroller: container,
-        start: "top top",
-        end: "bottom bottom",
-        scrub: 1.2,
-        animation: gsap.fromTo(sym, { y: 0 }, { y: -speed, ease: "none" })
-      });
-      floatTriggers.push(trigger);
-    });
-    ScrollTrigger.refresh();
-  }
 }
 
 /* ════════════════════════════════════════════
@@ -851,61 +825,7 @@ async function renderWeek() {
   });
 }
 
-/* ════════════════════════════════════════════
-   PHASE 2 — Custom Cursor Setup
-════════════════════════════════════════════ */
-function initCustomCursor() {
-  const cursorDot = document.querySelector('.cursor-dot');
-  const cursorTrail = document.querySelector('.cursor-trail');
-  if (!cursorDot || !cursorTrail) return;
 
-  // Only enable on desktop pointer devices
-  if (!window.matchMedia('(pointer: fine)').matches) return;
-
-  // Make them visible
-  cursorDot.style.display = 'block';
-  cursorTrail.style.display = 'block';
-
-  const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
-
-  window.addEventListener('mousemove', e => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-  });
-
-  // quickTo helpers
-  const xDot = gsap.quickTo(cursorDot, "x", { duration: 0, ease: "none" });
-  const yDot = gsap.quickTo(cursorDot, "y", { duration: 0, ease: "none" });
-  const xTrail = gsap.quickTo(cursorTrail, "x", { duration: 0.15, ease: "power2.out" });
-  const yTrail = gsap.quickTo(cursorTrail, "y", { duration: 0.15, ease: "power2.out" });
-
-  gsap.ticker.add(() => {
-    xDot(mouse.x);
-    yDot(mouse.y);
-    xTrail(mouse.x);
-    yTrail(mouse.y);
-  });
-
-  // Global hover detection using event delegation
-  document.body.addEventListener('mouseover', e => {
-    const trigger = e.target.closest('a, button, .bento-cell, .pb, .bm-row, .const-node, .rst-lnk, .checkbox, #ciStrip');
-    if (trigger) {
-      cursorTrail.classList.add('hovered');
-      cursorDot.classList.add('hovered');
-    }
-  });
-
-  document.body.addEventListener('mouseout', e => {
-    const trigger = e.target.closest('a, button, .bento-cell, .pb, .bm-row, .const-node, .rst-lnk, .checkbox, #ciStrip');
-    if (trigger) {
-      cursorTrail.classList.remove('hovered');
-      cursorDot.classList.remove('hovered');
-    }
-  });
-}
-
-// Initialize Custom Cursor immediately
-initCustomCursor();
 
 /* ════════════════════════════════════════════
    COVER BOOT — typewriter + masked reveals
