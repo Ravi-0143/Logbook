@@ -75,9 +75,11 @@
 }
 html, body {
   width: 100%; height: 100%;
-  overflow: hidden; position: fixed;
+  overflow: hidden; overflow-x: hidden; position: fixed;
   background: var(--bg);
   scroll-behavior: auto;
+  touch-action: pan-y;
+  overscroll-behavior-y: none;
 }
 body {
   color: var(--text);

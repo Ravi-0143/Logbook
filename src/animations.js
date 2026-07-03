@@ -16,6 +16,9 @@ import Lenis from 'lenis';
 
 gsap.registerPlugin(ScrollTrigger);
 
+// Normalize scroll for mobile viewports
+ScrollTrigger.normalizeScroll(true);
+
 /* ════════════════════════════════════════════
    LENIS — global smooth scroll instance
    Options tuned for a crisp, weighty feel.
@@ -173,13 +176,26 @@ export function revealMaskedEl(el, { delay = 0 } = {}) {
 export function bindParallax(scrollEl, targets, factor = 0.4) {
   if (!targets || !targets.length) return;
 
-  scrollEl.addEventListener('scroll', () => {
-    const st = scrollEl.scrollTop;
-    targets.forEach(el => {
-      // Move opposite to scroll at reduced rate → "floats" behind
-      gsap.set(el, { y: st * factor * -1 });
-    });
-  }, { passive: true });
+  const mm = gsap.matchMedia();
+
+  mm.add("(min-width: 768px)", () => {
+    const onScroll = () => {
+      const st = scrollEl.scrollTop;
+      targets.forEach(el => {
+        gsap.set(el, { y: st * factor * -1 });
+      });
+    };
+
+    scrollEl.addEventListener('scroll', onScroll, { passive: true });
+
+    // Clean up function runs when media query matches are lost (e.g. mobile resizing)
+    return () => {
+      scrollEl.removeEventListener('scroll', onScroll);
+      targets.forEach(el => {
+        gsap.set(el, { clearProps: "y" });
+      });
+    };
+  });
 }
 
 /* ════════════════════════════════════════════
