@@ -240,29 +240,64 @@ function curBlk(blocks) {
 }
 
 /* ════════════════════════════════════════════
-   STORAGE (Phase 5: preserved exactly)
-   window.storage = WebView host API.
-   Falls back to empty() in plain browser dev mode.
+   STORAGE — Google Sheets Backend
+   Test Deployment Web App URL
 ════════════════════════════════════════════ */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzq7zzVSg8xyWB8h3sddxZ6cuc5aXrDwoGoAfcIU81N/exec';
 const cache = {}, pend = {};
 
 async function getDay(k) {
   if (cache[k]) return cache[k];
   try {
-    const r = await window.storage.get(sk(k), false);
-    cache[k] = r ? JSON.parse(r.value) : empty();
-  } catch (e) { cache[k] = empty(); }
+    const res = await fetch(`${API_URL}?key=${encodeURIComponent(sk(k))}`);
+    const json = await res.json();
+    cache[k] = (json && json.value) ? json.value : empty();
+  } catch (e) {
+    cache[k] = empty();
+  }
   return cache[k];
 }
 
 function setDay(k, data) {
   cache[k] = data;
   clearTimeout(pend[k]);
+
+  // Set visual loading states
+  const isCurrentDay = (k === _vKey);
+  const saveMkBtn = document.getElementById('svMk');
+  const saveRvBtn = document.getElementById('svRv');
+  
+  if (saveMkBtn) { saveMkBtn.disabled = true; saveMkBtn.textContent = 'Saving...'; }
+  if (saveRvBtn) { saveRvBtn.disabled = true; saveRvBtn.textContent = 'Saving...'; }
+  if (isCurrentDay) {
+    document.querySelectorAll('.bento-cell').forEach(c => c.classList.add('saving'));
+  }
+
   pend[k] = setTimeout(async () => {
-    try { await window.storage.set(sk(k), JSON.stringify(data), false); }
-    catch (e) {
-      if ((e && e.message || '').includes('rate limit')) setTimeout(() => setDay(k, data), 1800);
-      else toast('Sync failed — data is safe here, reload later.', 'e');
+    try {
+      const res = await fetch(API_URL, {
+        method: 'POST',
+        mode: 'cors',
+        headers: {
+          'Content-Type': 'text/plain;charset=utf-8' // bypass CORS preflight
+        },
+        body: JSON.stringify({ key: sk(k), value: data })
+      });
+      const json = await res.json();
+      if (json && json.status === 'success') {
+        toast('Synced to Sheets ✓', 's');
+      } else {
+        throw new Error('sync failed');
+      }
+    } catch (e) {
+      toast('Sync failed — try again', 'e');
+    } finally {
+      // Clear visual loading states
+      if (saveMkBtn) { saveMkBtn.disabled = false; saveMkBtn.textContent = 'Save'; }
+      if (saveRvBtn) { saveRvBtn.disabled = false; saveRvBtn.textContent = 'Save'; }
+      if (isCurrentDay) {
+        document.querySelectorAll('.bento-cell').forEach(c => c.classList.remove('saving'));
+      }
     }
   }, 400);
 }

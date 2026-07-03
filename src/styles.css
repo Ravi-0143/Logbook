@@ -321,6 +321,16 @@ html.lenis, html.lenis body { height: auto; }
 }
 .done-flash { animation: cellComplete .75s ease both; }
 
+/* Saving state pulse for Google Sheets sync */
+.bento-cell.saving {
+  border-color: rgba(138, 180, 248, 0.4) !important;
+  animation: savingPulse 1.4s ease infinite;
+}
+@keyframes savingPulse {
+  0%, 100% { opacity: 1; filter: brightness(1); }
+  50% { opacity: 0.6; filter: brightness(0.85); }
+}
+
 /* ── Category colour skins ── */
 .cat-confrontation {
   background: var(--cat-confrontation-bg);
