@@ -306,9 +306,11 @@ function openBM() {
 
 function closeBM() {
   _typing = false; _blkId = null;
+  bmEl.style.pointerEvents = 'none'; // Block click interactions immediately
   animateModalClose(bmEl, () => {
     bmEl.classList.remove('on');
     bmBd.classList.remove('on');
+    bmEl.removeAttribute('style'); // Clean up GSAP inline styles
     unlockBackgroundScroll();
   });
 }
