@@ -3,6 +3,8 @@
 /* ════════════════════════════════════════════
    IMPORTS
 ════════════════════════════════════════════ */
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { initWebGLBackground } from './canvas/webgl-bg.js';
 import {
   initLenis,
@@ -16,6 +18,8 @@ import {
   pulseStrip,
 } from './animations.js';
 
+gsap.registerPlugin(ScrollTrigger);
+
 /* ════════════════════════════════════════════
    PHASE 4 — WebGL background boot
    (replaces nebula.js + stars.js entirely)
@@ -23,16 +27,42 @@ import {
 initWebGLBackground();
 
 /* ════════════════════════════════════════════
-   PHASE 3 — Lenis smooth scroll
+   PHASE 3 — Lenis smooth scroll & Parallax
    Bound after DOM is ready; re-bound whenever
    the active scroll container changes.
 ════════════════════════════════════════════ */
 let _lenis = null;
+let floatTriggers = [];
 
 function bindLenisTo(container) {
+  // Clear existing floating parallax triggers
+  floatTriggers.forEach(t => t.kill());
+  floatTriggers = [];
+
   if (_lenis) { _lenis.destroy(); _lenis = null; }
   if (!container) return;
+  
   _lenis = initLenis(container);
+
+  // Initialize ScrollTrigger parallax on floating symbols layer
+  const syms = gsap.utils.toArray('.float-sym');
+  
+  // Only apply scroll-parallax if screen is desktop width and fine pointer
+  if (window.matchMedia('(min-width: 768px) and (pointer: fine)').matches) {
+    syms.forEach((sym, i) => {
+      const speed = 320 + (i * 90); // staggered aggressive float translation
+      const trigger = ScrollTrigger.create({
+        trigger: container,
+        scroller: container,
+        start: "top top",
+        end: "bottom bottom",
+        scrub: 1.2,
+        animation: gsap.fromTo(sym, { y: 0 }, { y: -speed, ease: "none" })
+      });
+      floatTriggers.push(trigger);
+    });
+    ScrollTrigger.refresh();
+  }
 }
 
 /* ════════════════════════════════════════════
@@ -668,32 +698,179 @@ async function revealCellText({ blk, card }) {
 }
 
 /* ════════════════════════════════════════════
-   RENDER WEEK VIEW
+   RENDER WEEK VIEW (Radial Constellation)
 ════════════════════════════════════════════ */
 async function renderWeek() {
   const dates = wkDates();
   await Promise.all(dates.map(dt => getDay(toK(dt))));
   const nowK = toK(new Date()), mon = dates[0], sun = dates[6];
+  
   document.getElementById('wkRange').textContent =
     `${mon.toLocaleDateString([],{month:'short',day:'numeric'})} – ${sun.toLocaleDateString([],{month:'short',day:'numeric'})}`;
-  const grid = document.getElementById('wkGrid'); grid.innerHTML = '';
-  dates.forEach(dt => {
+  
+  const container = document.getElementById('constellation');
+  container.innerHTML = '';
+
+  // Center indicator
+  const centerEl = document.createElement('div');
+  centerEl.className = 'const-center';
+  centerEl.innerHTML = `
+    <div class="const-center-pct" id="const-avg">0%</div>
+    <div class="const-center-lbl">Avg Completion</div>
+  `;
+  container.appendChild(centerEl);
+
+  // SVG lines layer (connections)
+  const linesSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  linesSvg.setAttribute('class', 'const-line');
+  linesSvg.setAttribute('viewBox', '0 0 420 420');
+  linesSvg.id = 'const-svg-lines';
+  container.appendChild(linesSvg);
+
+  let totalPctSum = 0;
+  let activeDaysCount = 0;
+
+  const radius = 145;
+  const centerX = 210;
+  const centerY = 210;
+
+  const nodesData = dates.map((dt, idx) => {
     const k = toK(dt), d = cache[k]||empty(), t = dtOf(dt);
     const tot = nItems(t), chk = nDone(d), pct = tot ? Math.round(chk/tot*100) : 0;
     const isT = k === nowK;
-    const card = document.createElement('div');
-    card.className = 'wk-card' + (isT ? ' today' : '');
-    card.innerHTML = `<div class="wk-day${isT?' today':''}">${DN[dt.getDay()]}</div>
-      <div class="bar-track"><div class="bar-fill" style="width:0%"></div></div>
-      <div class="bar-pct">${pct}%</div>
-      <div class="ci-dot${d.checkin && d.checkin.verified ? ' in' : ''}"></div>`;
-    addPassiveToggle(card, () => { vDay=k; isFirst=true; leaveWeek(); renderLog(k); });
-    grid.appendChild(card);
-    requestAnimationFrame(() => requestAnimationFrame(() => {
-      card.querySelector('.bar-fill').style.width = pct + '%';
-    }));
+    const isVerified = !!(d.checkin && d.checkin.verified);
+
+    totalPctSum += pct;
+    activeDaysCount++;
+
+    // Calculate position
+    const angle = (idx / 7) * 2 * Math.PI - Math.PI / 2;
+    const x = centerX + Math.cos(angle) * radius;
+    const y = centerY + Math.sin(angle) * radius;
+
+    // Draw connection line path in the central SVG
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('d', `M ${centerX} ${centerY} L ${x} ${y}`);
+    linesSvg.appendChild(path);
+
+    // Create node element
+    const node = document.createElement('div');
+    node.className = 'const-node' + (isT ? ' today' : '') + (isVerified ? ' verified' : '');
+    node.style.left = `${x - 30}px`;
+    node.style.top = `${y - 30}px`;
+
+    // Node color determination based on completion level
+    const nodeColor = pct === 100 ? 'var(--green)' : (pct > 0 ? 'var(--accent)' : 'rgba(255,255,255,0.22)');
+    node.style.setProperty('--node-color', nodeColor);
+
+    node.innerHTML = `
+      <svg class="const-node-svg" viewBox="0 0 60 60">
+        <circle class="const-node-bg" cx="30" cy="30" r="27"></circle>
+        <circle class="const-node-fill" cx="30" cy="30" r="27"></circle>
+      </svg>
+      <div class="const-node-txt">${DN[dt.getDay()][0]}</div> <!-- Single letter (S, M, T...) -->
+      <div class="const-node-dot"></div>
+    `;
+
+    // Clicking a node redirects to that day's logbook
+    addPassiveToggle(node, () => {
+      vDay = k;
+      isFirst = true;
+      leaveWeek();
+      renderLog(k);
+    });
+
+    container.appendChild(node);
+
+    return { node, pct, path };
+  });
+
+  const totalPct = activeDaysCount ? Math.round(totalPctSum / activeDaysCount) : 0;
+
+  // Connection lines draw animation
+  gsap.fromTo("#const-svg-lines path",
+    { strokeDasharray: 200, strokeDashoffset: 200 },
+    { strokeDashoffset: 0, duration: 0.75, stagger: 0.06, ease: "power2.out" }
+  );
+
+  // Nodes animation
+  nodesData.forEach(({ node, pct }) => {
+    const fillCircle = node.querySelector('.const-node-fill');
+    const targetOffset = 188 - (188 * pct / 100);
+    // Staggered delay for nodes
+    gsap.fromTo(fillCircle,
+      { strokeDashoffset: 188 },
+      { strokeDashoffset: targetOffset, duration: 0.95, delay: 0.35, ease: "power2.out" }
+    );
+  });
+
+  // Count up center average percentage
+  const avgObj = { val: 0 };
+  gsap.to(avgObj, {
+    val: totalPct,
+    duration: 1.1,
+    ease: "power2.out",
+    onUpdate: () => {
+      document.getElementById('const-avg').textContent = Math.round(avgObj.val) + '%';
+    }
   });
 }
+
+/* ════════════════════════════════════════════
+   PHASE 2 — Custom Cursor Setup
+════════════════════════════════════════════ */
+function initCustomCursor() {
+  const cursorDot = document.querySelector('.cursor-dot');
+  const cursorTrail = document.querySelector('.cursor-trail');
+  if (!cursorDot || !cursorTrail) return;
+
+  // Only enable on desktop pointer devices
+  if (!window.matchMedia('(pointer: fine)').matches) return;
+
+  // Make them visible
+  cursorDot.style.display = 'block';
+  cursorTrail.style.display = 'block';
+
+  const mouse = { x: window.innerWidth / 2, y: window.innerHeight / 2 };
+
+  window.addEventListener('mousemove', e => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+  });
+
+  // quickTo helpers
+  const xDot = gsap.quickTo(cursorDot, "x", { duration: 0, ease: "none" });
+  const yDot = gsap.quickTo(cursorDot, "y", { duration: 0, ease: "none" });
+  const xTrail = gsap.quickTo(cursorTrail, "x", { duration: 0.15, ease: "power2.out" });
+  const yTrail = gsap.quickTo(cursorTrail, "y", { duration: 0.15, ease: "power2.out" });
+
+  gsap.ticker.add(() => {
+    xDot(mouse.x);
+    yDot(mouse.y);
+    xTrail(mouse.x);
+    yTrail(mouse.y);
+  });
+
+  // Global hover detection using event delegation
+  document.body.addEventListener('mouseover', e => {
+    const trigger = e.target.closest('a, button, .bento-cell, .pb, .bm-row, .const-node, .rst-lnk, .checkbox, #ciStrip');
+    if (trigger) {
+      cursorTrail.classList.add('hovered');
+      cursorDot.classList.add('hovered');
+    }
+  });
+
+  document.body.addEventListener('mouseout', e => {
+    const trigger = e.target.closest('a, button, .bento-cell, .pb, .bm-row, .const-node, .rst-lnk, .checkbox, #ciStrip');
+    if (trigger) {
+      cursorTrail.classList.remove('hovered');
+      cursorDot.classList.remove('hovered');
+    }
+  });
+}
+
+// Initialize Custom Cursor immediately
+initCustomCursor();
 
 /* ════════════════════════════════════════════
    COVER BOOT — typewriter + masked reveals

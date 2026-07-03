@@ -8,15 +8,14 @@
    DESIGN TOKENS
 ───────────────────────────────────────── */
 :root {
-  /* Colour primitives */
-  --bg:       #06090e;
-  --s1:       rgba(255,255,255,.05);
-  --s2:       rgba(255,255,255,.09);
-  --bd:       rgba(255,255,255,.08);
-  --bd2:      rgba(255,255,255,.18);
-  --text:     #e8eaed;
-  --dim:      rgba(232,234,237,.52);
-  --faint:    rgba(232,234,237,.26);
+  /* Colour primitives - Antigravity Color Science */
+  --bg:       #000000;
+  --bg-main:  #000000;
+  --text:     #ffffff;
+  --text-primary: #ffffff;
+  --text-secondary: #888888;
+  --dim:      #888888;
+  --faint:    rgba(255, 255, 255, 0.28);
   --accent:   #8ab4f8;
   --green:    #81c995;
   --amber:    #fdd663;
@@ -24,27 +23,28 @@
   --ssc:      #f6ae2d;
   --upsc:     #81c995;
   --reset:    #c58af9;
+  --accent-glow: rgba(138, 180, 248, 0.15);
 
   /* ── Bento category colours ──
      Encodes task TYPE (leverage), not day.
      Eye learns once, applies everywhere. */
   --cat-confrontation:        hsla(22, 88%, 66%, 1);   /* coral-amber — warmest, boldest */
-  --cat-confrontation-bg:     hsla(22, 88%, 66%, .10);
-  --cat-confrontation-bd:     hsla(22, 88%, 66%, .28);
-  --cat-confrontation-glow:   hsla(22, 88%, 66%, .18);
+  --cat-confrontation-bg:     transparent;
+  --cat-confrontation-bd:     rgba(255, 255, 255, 0.08);
+  --cat-confrontation-glow:   rgba(255, 255, 255, 0.04);
 
   --cat-input:                hsla(188, 52%, 56%, 1);  /* teal-blue — calmer */
-  --cat-input-bg:             hsla(188, 52%, 56%, .08);
-  --cat-input-bd:             hsla(188, 52%, 56%, .22);
-  --cat-input-glow:           hsla(188, 52%, 56%, .12);
+  --cat-input-bg:             transparent;
+  --cat-input-bd:             rgba(255, 255, 255, 0.08);
+  --cat-input-glow:           rgba(255, 255, 255, 0.04);
 
-  --cat-admin:                rgba(255,255,255,.18);   /* neutral gray — small footprint */
-  --cat-admin-bg:             rgba(255,255,255,.04);
-  --cat-admin-bd:             rgba(255,255,255,.10);
+  --cat-admin:                rgba(255, 255, 255, 0.08);   /* neutral gray — small footprint */
+  --cat-admin-bg:             transparent;
+  --cat-admin-bd:             rgba(255, 255, 255, 0.08);
 
   --cat-obligation:           hsla(260, 28%, 44%, 1);  /* muted violet — life anchor */
-  --cat-obligation-bg:        hsla(260, 28%, 44%, .10);
-  --cat-obligation-bd:        hsla(260, 28%, 44%, .24);
+  --cat-obligation-bg:        transparent;
+  --cat-obligation-bd:        rgba(255, 255, 255, 0.08);
 
   /* ── Z-index depth stack ──
      WebGL bg → video → overlay → stars → UI views → nav → modal → toast → popup */
@@ -620,21 +620,182 @@ html.lenis, html.lenis body { height: auto; }
   -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
 }
 .wk-head span { font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--dim); }
-.wk-card {
-  background: rgba(255,255,255,.05); border: 1px solid rgba(255,255,255,.08);
-  border-radius: 16px; padding: 14px 16px; margin-bottom: 8px;
-  display: flex; align-items: center; gap: 12px; cursor: pointer;
-  backdrop-filter: blur(8px); transition: border-color .18s, transform .15s;
+/* Custom Cursor styling */
+.cursor-dot {
+  position: fixed;
+  top: 0; left: 0;
+  width: 5px; height: 5px;
+  background: #ffffff;
+  border-radius: 50%;
+  z-index: 10000;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  display: none;
 }
-.wk-card:active { transform: scale(.98); }
-.wk-card.today { border-color: rgba(138,180,248,.3); }
-.wk-day { width: 32px; font-size: 12px; color: var(--dim); }
-.wk-day.today { color: var(--accent); font-weight: 500; }
-.bar-track { flex: 1; height: 6px; border-radius: 3px; background: rgba(255,255,255,.07); overflow: hidden; }
-.bar-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg,var(--accent),var(--green)); transition: width .5s cubic-bezier(.22,.68,0,1.2); }
-.bar-pct { width: 32px; text-align: right; font-family: 'Google Sans Mono', monospace; font-size: 11px; color: var(--dim); }
-.ci-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,.14); flex-shrink: 0; transition: background .2s; }
-.ci-dot.in { background: var(--green); box-shadow: 0 0 6px rgba(129,201,149,.5); }
+.cursor-trail {
+  position: fixed;
+  top: 0; left: 0;
+  width: 26px; height: 26px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  z-index: 9999;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  display: none;
+  transition: width 0.25s ease, height 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+}
+.cursor-trail.hovered {
+  width: 48px; height: 48px;
+  border-color: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.05);
+}
+.cursor-dot.hovered {
+  opacity: 0;
+}
+@media (pointer: fine) {
+  * { cursor: none !important; }
+  .cursor-dot, .cursor-trail { display: block; }
+}
+
+/* Floating Symbols Layer */
+.floating-symbols-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  overflow: hidden;
+}
+.float-sym {
+  position: absolute;
+  pointer-events: none;
+  opacity: 0.8;
+}
+.sym-a { top: 15%; left: 8%; width: 140px; height: 140px; }
+.sym-b { top: 45%; left: 82%; width: 28px; height: 28px; }
+.sym-c { top: 75%; left: 14%; width: 90px; height: 90px; }
+.sym-d { top: 25%; left: 74%; width: 22px; height: 22px; }
+.sym-e { top: 60%; left: 68%; width: 50px; height: 50px; }
+
+/* Radial Data Constellation */
+.constellation-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 0;
+  min-height: 480px;
+}
+#constellation {
+  position: relative;
+  width: 420px;
+  height: 420px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+.const-center {
+  position: absolute;
+  width: 140px;
+  height: 140px;
+  border-radius: 50%;
+  border: 1px dashed rgba(255, 255, 255, 0.15);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.85);
+  box-shadow: 0 0 40px rgba(138, 180, 248, 0.08);
+  z-index: 5;
+}
+.const-center-pct {
+  font-size: 32px;
+  font-weight: 700;
+  color: #ffffff;
+  line-height: 1;
+}
+.const-center-lbl {
+  font-size: 9px;
+  text-transform: uppercase;
+  letter-spacing: 1.5px;
+  color: var(--dim);
+  margin-top: 8px;
+}
+.const-node {
+  position: absolute;
+  width: 60px;
+  height: 60px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 6;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: transform 0.2s ease;
+}
+.const-node:active {
+  transform: scale(0.92);
+}
+.const-node-svg {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0; left: 0;
+}
+.const-node-bg {
+  stroke: rgba(255, 255, 255, 0.05);
+  stroke-width: 2;
+  fill: none;
+}
+.const-node-fill {
+  stroke: var(--node-color, var(--accent));
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  fill: none;
+  stroke-dasharray: 188;
+  stroke-dashoffset: 188;
+}
+.const-node-txt {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--text);
+  font-family: 'Google Sans Mono', monospace;
+  z-index: 2;
+  user-select: none;
+}
+.const-node.today .const-node-bg {
+  stroke: rgba(255, 255, 255, 0.15);
+}
+.const-node.today .const-node-txt {
+  color: var(--accent);
+}
+.const-node-dot {
+  position: absolute;
+  bottom: -2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 8px var(--green);
+  opacity: 0;
+  transform: scale(0);
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+.const-node.verified .const-node-dot {
+  opacity: 1;
+  transform: scale(1);
+}
+.const-line {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  pointer-events: none;
+  z-index: 2;
+}
+.const-line path {
+  stroke: rgba(255, 255, 255, 0.08);
+  stroke-width: 1;
+  stroke-dasharray: 5,4;
+  fill: none;
+}
 
 /* ─────────────────────────────────────────
    POPUP
