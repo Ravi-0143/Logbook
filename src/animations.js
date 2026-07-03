@@ -173,26 +173,14 @@ export function revealMaskedEl(el, { delay = 0 } = {}) {
 export function bindParallax(scrollEl, targets, factor = 0.4) {
   if (!targets || !targets.length) return;
 
-  const mm = gsap.matchMedia();
+  const onScroll = () => {
+    const st = scrollEl.scrollTop;
+    targets.forEach(el => {
+      gsap.set(el, { y: st * factor * -1 });
+    });
+  };
 
-  mm.add("(min-width: 768px)", () => {
-    const onScroll = () => {
-      const st = scrollEl.scrollTop;
-      targets.forEach(el => {
-        gsap.set(el, { y: st * factor * -1 });
-      });
-    };
-
-    scrollEl.addEventListener('scroll', onScroll, { passive: true });
-
-    // Clean up function runs when media query matches are lost (e.g. mobile resizing)
-    return () => {
-      scrollEl.removeEventListener('scroll', onScroll);
-      targets.forEach(el => {
-        gsap.set(el, { clearProps: "y" });
-      });
-    };
-  });
+  scrollEl.addEventListener('scroll', onScroll, { passive: true });
 }
 
 /* ════════════════════════════════════════════
