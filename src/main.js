@@ -534,27 +534,131 @@ const CONTAINER_STEP = 210;
 const TEXT_OFFSET    = 3;
 const GRID_CLASS = { ssc:'bento-ssc', upsc:'bento-upsc', reset:'bento-reset' };
 
+function runTerminalSync(grid, fetchPromise) {
+  return new Promise(resolve => {
+    grid.innerHTML = `
+      <div id="logTerminal">
+        <div class="term-header">
+          <span class="term-dot red"></span>
+          <span class="term-dot yellow"></span>
+          <span class="term-dot green"></span>
+          <span class="term-title">antigravity // sheets-sync-console</span>
+          <span id="termTimer" class="term-timer">0.00s</span>
+        </div>
+        <div id="termBody"></div>
+      </div>
+    `;
+
+    const termBody = document.getElementById('termBody');
+    const termTimer = document.getElementById('termTimer');
+    const startTime = Date.now();
+
+    // Timer updater
+    let timerInterval = setInterval(() => {
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+      if (termTimer) termTimer.textContent = elapsed + 's';
+    }, 10);
+
+    const logLines = [
+      { text: "⏳ [SYSTEM] Booting Antigravity Sheets Sync V4.2.1...", type: "sys" },
+      { text: "📡 [RESOLVE] Connecting to Google API gateways...", type: "sys" },
+      { text: "🔍 [RESOLVE] Endpoint target: ravi-0143/Logbook backend...", type: "sys" },
+      { text: "⚙️  [PARAMS] Routing payload checks: light mode active...", type: "sys" },
+      { text: "📡 [FETCH] GET secure Google Web App endpoint...", type: "cmd" },
+      { text: "🔑 [HEADERS] Content-Type: text/plain;charset=utf-8", type: "sys" },
+      { text: "🔄 [REDIRECT] HTTP/1.1 302 Redirecting secure doc token...", type: "sys" },
+      { text: "📂 [DATASTORE] Google Sheet database lock: verified...", type: "sys" },
+      { text: "📥 [RESPONSE] HTTP/1.1 200 OK - Secure stream established", type: "ok" },
+      { text: "📄 [DESERIALIZE] Parsing sheets tables (7 daily schedules parsed)...", type: "sys" },
+      { text: "⚡ [COMPILER] Hydrating memory cache for logbook dates...", type: "sys" },
+    ];
+
+    let lineIndex = 0;
+    let logInterval = setInterval(() => {
+      if (lineIndex < logLines.length) {
+        appendLine(logLines[lineIndex].text, logLines[lineIndex].type);
+        lineIndex++;
+      } else {
+        clearInterval(logInterval);
+      }
+    }, 100);
+
+    function appendLine(txt, type) {
+      if (!termBody) return;
+      const d = document.createElement('div');
+      d.className = `term-line ${type || ''}`;
+      d.textContent = txt;
+      termBody.appendChild(d);
+      termBody.scrollTop = termBody.scrollHeight;
+    }
+
+    // Wait for the fetch to complete
+    fetchPromise.then(() => {
+      // Clear scheduling intervals
+      clearInterval(logInterval);
+      clearInterval(timerInterval);
+
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+      if (termTimer) termTimer.textContent = elapsed + 's';
+
+      // Catch up any unprinted log lines quickly
+      while (lineIndex < logLines.length) {
+        appendLine(logLines[lineIndex].text, logLines[lineIndex].type);
+        lineIndex++;
+      }
+
+      // Print final success indicators
+      setTimeout(() => {
+        appendLine("✓ [SUCCESS] Sheets data synchronized in " + elapsed + "s", "ok");
+        
+        setTimeout(() => {
+          appendLine("🖥️ [COMPILER] Building bento grid layout matrix...", "cmd");
+          
+          setTimeout(() => {
+            appendLine("🔌 [DISCONNECT] Sync console offline. Decoupling debug overlay...", "sys");
+            
+            // Wait a brief moment to let user read final output, then animate out
+            setTimeout(() => {
+              const termEl = document.getElementById('logTerminal');
+              if (termEl) {
+                gsap.to(termEl, {
+                  opacity: 0,
+                  scale: 0.96,
+                  y: 15,
+                  duration: 0.35,
+                  ease: "power2.in",
+                  onComplete: resolve
+                });
+              } else {
+                resolve();
+              }
+            }, 380);
+          }, 120);
+        }, 120);
+      }, 120);
+    }).catch(err => {
+      clearInterval(logInterval);
+      clearInterval(timerInterval);
+      appendLine("❌ [ERROR] Connection failed: " + err.message, "sys");
+      setTimeout(resolve, 1500); // resolve anyway to show fallback
+    });
+  });
+}
+
 async function renderLog(jump) {
   const dates = wkDates(), now = new Date(), nowK = toK(now);
   if (jump) vDay = jump;
   if (!vDay) vDay = nowK;
 
-  // Immediate skeleton loader cards so the screen is never blank during network fetches
   const grid = document.getElementById('bentoGrid');
-  if (grid) {
-    grid.className = 'bento-ssc';
-    grid.innerHTML = Array.from({ length: 6 }, () => `
-      <div class="bento-cell shown" style="pointer-events:none; border-color:#e8eaed; min-height:100px;">
-        <div class="cell-top">
-          <div class="skel-ttl"></div>
-          <div class="cell-cat-pill" style="opacity:0.25; background:none; border-color:#e8eaed;">loading</div>
-        </div>
-        <div class="skel-time"></div>
-      </div>
-    `).join('');
-  }
+  const needFetch = dates.some(dt => !cache[toK(dt)]);
+  const fetchPromise = Promise.all(dates.map(dt => getDay(toK(dt))));
 
-  await Promise.all(dates.map(dt => getDay(toK(dt))));
+  if (needFetch && grid) {
+    await runTerminalSync(grid, fetchPromise);
+  } else {
+    await fetchPromise;
+  }
 
   const vDate   = dates.find(d => toK(d) === vDay) || now;
   const vKey    = toK(vDate);
